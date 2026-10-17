@@ -8,6 +8,12 @@ interface Props {
   onCancelar: () => void;
   /** Texto del botón destructivo (por defecto "Sí, borrar todo"). */
   textoConfirmar?: string;
+  /** Título del modal (opcional). */
+  titulo?: string;
+  /** Mensaje descriptivo bajo el título (opcional). */
+  mensaje?: string;
+  /** Nota aclaratoria al pie del modal (opcional). */
+  nota?: string;
 }
 
 export default function ConfirmarBorrado({
@@ -15,6 +21,9 @@ export default function ConfirmarBorrado({
   onConfirmar,
   onCancelar,
   textoConfirmar = "Sí, borrar todo",
+  titulo = "¿Borrar todas tus traducciones?",
+  mensaje = "Esta acción no se puede deshacer.",
+  nota = "Se eliminarán todos los registros guardados en este navegador, incluidas las miniaturas y los videos.",
 }: Props) {
   const cancelarRef = useRef<HTMLButtonElement>(null);
 
@@ -66,14 +75,11 @@ export default function ConfirmarBorrado({
       aria-label="Confirmar borrado"
     >
       <div className="modal-card" id="modal-confirmar">
-        <h2>¿Borrar todas tus traducciones?</h2>
-        <p className="subtitle mt-2">
-          Esta acción no se puede deshacer.
-        </p>
-        <p className="text-sm muted mt-3">
-          Se eliminarán todos los registros guardados en este navegador,
-          incluidas las miniaturas y los videos.
-        </p>
+        <h2>{titulo}</h2>
+        <p className="subtitle mt-2">{mensaje}</p>
+        {nota && (
+          <p className="text-sm muted mt-3">{nota}</p>
+        )}
         <div className="modal-acciones mt-4">
           <button
             ref={cancelarRef}

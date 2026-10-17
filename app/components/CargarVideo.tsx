@@ -62,6 +62,17 @@ export default function CargarVideo({
   const [errores, setErrores] = useState<{ especie?: string }>({});
   const [estadoWeb, setEstadoWeb] = useState<EstadoWebcam>({ tipo: "apagado" });
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
+  // Soporte de webcam: detectado una sola vez al montar (true por defecto en SSR).
+  const [webcamSoportada, setWebcamSoportada] = useState(true);
+
+  // Detectar si el navegador expone getUserMedia (algunos contextos no lo hacen).
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const soportado =
+      !!navigator.mediaDevices &&
+      typeof navigator.mediaDevices.getUserMedia === "function";
+    setWebcamSoportada(soportado);
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropzoneRef = useRef<HTMLButtonElement>(null);
@@ -122,11 +133,11 @@ export default function CargarVideo({
           target.isContentEditable);
       if (enEditable) return;
       if (e.key === " " || e.code === "Space") {
-        // grabar/parar
+        // grabar/parar (solo si la webcam es compatible con el navegador)
         if (estadoWeb.tipo === "grabando") {
           e.preventDefault();
           detenerGrabacion();
-        } else if (estadoWeb.tipo === "apagado" && !video) {
+        } else if (estadoWeb.tipo === "apagado" && !video && webcamSoportada) {
           e.preventDefault();
           void iniciarGrabacion();
         }
@@ -140,7 +151,7 @@ export default function CargarVideo({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [puedeAnalizar, estadoWeb.tipo, video]);
+  }, [puedeAnalizar, estadoWeb.tipo, video, webcamSoportada]);
 
   // Limpieza al desmontar
   useEffect(() => {
@@ -417,13 +428,27 @@ export default function CargarVideo({
           🎞️ Elegir un video
         </button>
         {estadoWeb.tipo === "apagado" ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => void iniciarGrabacion()}
-          >
-            🎥 Grabar con la webcam
-          </button>
+          <>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => void iniciarGrabacion()}
+              disabled={!webcamSoportada}
+              aria-disabled={!webcamSoportada}
+              title={
+                webcamSoportada
+                  ? undefined
+                  : "Tu navegador no expone webcam; arrastra un video en su lugar."
+              }
+            >
+              🎥 Grabar con la webcam
+            </button>
+            {!webcamSoportada && (
+              <span className="text-sm muted" role="note">
+                Tu navegador no expone webcam. Arrastra un video en su lugar.
+              </span>
+            )}
+          </>
         ) : estadoWeb.tipo === "pidiendo" ? (
           <button type="button" className="btn btn-ghost" disabled>
             Pidiendo permiso…

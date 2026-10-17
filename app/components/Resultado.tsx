@@ -60,17 +60,26 @@ export default function Resultado({
     return Math.round(Math.max(CERTEZA_MIN, Math.min(CERTEZA_MAX, v)));
   })();
 
-  // Selección de frase: arranca con indice 0 y se va avanzando con R
+  // Selección de frase: arranca con indice 0 y se va avanzando con R.
+  // Guardamos también el id interno de la última frase elegida para no
+  // repetir la inmediatamente anterior en la siguiente llamada (AC3.4).
   const [indiceFrase, setIndiceFrase] = useState(0);
-  const [frase, setFrase] = useState<string>(() =>
-    elegirFrase(animo, especie, tono, semilla, 0),
-  );
+  const [ultimoId, setUltimoId] = useState<number | null>(null);
+  const [frase, setFrase] = useState<string>(() => {
+    const r = elegirFrase(animo, especie, tono, semilla, 0);
+    // No bloqueamos en el primer arranque (no hay frase previa); el id queda
+    // registrado para la próxima vez.
+    queueMicrotask(() => setUltimoId(r.id));
+    return r.frase;
+  });
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  // Cuando cambia el tono, recalcular la frase al instante (mismo indice → no repetir)
+  // Cuando cambia el tono, recalcular la frase al instante SIN repetir la
+  // última frase mostrada (mismo indice → no repetir).
   useEffect(() => {
-    const nueva = elegirFrase(animo, especie, tono, semilla, indiceFrase);
-    setFrase(nueva);
+    const r = elegirFrase(animo, especie, tono, semilla, indiceFrase, ultimoId ?? undefined);
+    setFrase(r.frase);
+    setUltimoId(r.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tono]);
 
@@ -107,11 +116,14 @@ export default function Resultado({
   const otraTraduccion = useCallback(() => {
     setIndiceFrase((i) => {
       const nuevo = i + 1;
-      const f = elegirFrase(animo, especie, tono, semilla, nuevo);
-      setFrase(f);
+      // Pasamos ultimoId para garantizar que la nueva frase NO sea la misma
+      // que la anterior (AC3.4).
+      const r = elegirFrase(animo, especie, tono, semilla, nuevo, ultimoId ?? undefined);
+      setFrase(r.frase);
+      setUltimoId(r.id);
       return nuevo;
     });
-  }, [animo, especie, tono, semilla]);
+  }, [animo, especie, tono, semilla, ultimoId]);
 
   const copiar = useCallback(async () => {
     try {

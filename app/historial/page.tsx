@@ -13,6 +13,8 @@ export default function HistorialPage() {
   const [cargando, setCargando] = useState(true);
   const [abrirId, setAbrirId] = useState<number | null>(null);
   const [confirmarTodo, setConfirmarTodo] = useState(false);
+  // Borrado individual con confirmación modal (AC4.3).
+  const [pendienteBorrar, setPendienteBorrar] = useState<DatosHistorial | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -32,14 +34,20 @@ export default function HistorialPage() {
     if (r.id != null) setAbrirId(r.id);
   }, []);
 
-  const borrarUno = useCallback(
-    async (r: DatosHistorial) => {
-      if (r.id == null) return;
-      await HistorialDB.borrar(r.id);
-      setRegistros((prev) => prev.filter((x) => x.id !== r.id));
-    },
-    [],
-  );
+  const pedirBorrarUno = useCallback((r: DatosHistorial) => {
+    setPendienteBorrar(r);
+  }, []);
+
+  const confirmarBorrarUno = useCallback(async () => {
+    const r = pendienteBorrar;
+    if (!r || r.id == null) {
+      setPendienteBorrar(null);
+      return;
+    }
+    await HistorialDB.borrar(r.id);
+    setRegistros((prev) => prev.filter((x) => x.id !== r.id));
+    setPendienteBorrar(null);
+  }, [pendienteBorrar]);
 
   const borrarTodo = useCallback(async () => {
     await HistorialDB.borrarTodo();
@@ -101,7 +109,7 @@ export default function HistorialPage() {
               <TarjetaHistorial
                 registro={r}
                 onAbrir={() => abrir(r)}
-                onBorrar={() => void borrarUno(r)}
+                onBorrar={() => pedirBorrarUno(r)}
               />
             </div>
           ))}
@@ -119,6 +127,16 @@ export default function HistorialPage() {
         abierto={confirmarTodo}
         onCancelar={() => setConfirmarTodo(false)}
         onConfirmar={() => void borrarTodo()}
+      />
+
+      <ConfirmarBorrado
+        abierto={!!pendienteBorrar}
+        onCancelar={() => setPendienteBorrar(null)}
+        onConfirmar={() => void confirmarBorrarUno()}
+        titulo="¿Borrar esta traducción?"
+        mensaje="Esta acción no se puede deshacer."
+        nota="Se eliminará solo este registro del historial en este navegador (miniatura y video si los tenías guardados)."
+        textoConfirmar="Sí, borrar"
       />
     </div>
   );

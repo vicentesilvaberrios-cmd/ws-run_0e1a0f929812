@@ -10,6 +10,11 @@ import type { AnalisisCompleto, Especie, Tono } from "../lib/types";
 
 type Fase = "inicio" | "analizando" | "resultado";
 
+// Garantiza que la pantalla de análisis dure al menos 2.5s aunque el motor
+// termine antes (AC2.1: "etapas paralelas al análisis; si termina antes, se
+// muestran todas igual: total mín 2.5s, máx 4s").
+const ANALISIS_MIN_MS = 2500;
+
 export default function HomePage() {
   const [fase, setFase] = useState<Fase>("inicio");
   const [video, setVideo] = useState<VideoCargado | null>(null);
@@ -27,10 +32,17 @@ export default function HomePage() {
     if (!video || !especie) return;
     setError(null);
     setFase("analizando");
+    const t0 = performance.now();
     try {
-      // analisis.ts se encarga de consumir el src y liberarlo si es blob.
       const señales = await analizarVideo({ src: video.url });
       const { animo, certeza } = clasificar(señales, especie);
+      const restante = ANALISIS_MIN_MS - (performance.now() - t0);
+      // Esperar lo que falte para llegar al mínimo de la pantalla de análisis.
+      // Si ya pasamos el mínimo, avanzamos igual (no extendemos más allá de
+      // lo estrictamente necesario para cumplir el mínimo).
+      if (restante > 0) {
+        await new Promise((r) => setTimeout(r, restante));
+      }
       setAnalisis({
         animo,
         certeza,
@@ -51,7 +63,7 @@ export default function HomePage() {
   const analizarOtro = useCallback(() => {
     setAnalisis(null);
     setFase("inicio");
-    // mantenemos especie/tono, pero limpiamos el video
+    // mantenemos especie/tono, pero limpiamos el video (y su object URL)
     setVideo((v) => {
       if (v?.url) URL.revokeObjectURL(v.url);
       return null;

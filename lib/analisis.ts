@@ -128,10 +128,10 @@ export async function analizarVideo(fuente: FuenteVideo): Promise<Señales> {
   // ----- Audio -----
   const señalesAudio = await analizarAudio(fuente.src);
 
-  // Liberar object URL si era blob
-  if (fuente.src.startsWith("blob:")) {
-    URL.revokeObjectURL(fuente.src);
-  }
+  // Nota: NO revocamos el object URL aquí. La página (padre) lo creó y lo
+  // sigue usando en <video src=...> del resultado; revocarlo desde acá
+  // podría dejar el <video> con src inválido. La responsabilidad del ciclo
+  // de vida del blob es del padre (app/page.tsx, ver analizarOtro).
 
   return {
     energia: clamp(energia, 0, 100),
@@ -334,10 +334,23 @@ export function clasificar(
 // ---------------------------------------------------------------------------
 
 /**
+ * Resultado de elegir frase: la frase y su id interno (índice en el grupo).
+ * Devolver el id permite a la UI evitar repetir la frase inmediatamente
+ * anterior en la siguiente llamada (AC3.4).
+ */
+export interface FraseElegida {
+  frase: string;
+  id: number;
+}
+
+/**
  * Elige una frase del banco para (animo, especie, tono). El índice inicial
  * se deriva de la semilla (=> determinismo: misma semilla + mismo índice =>
  * misma frase). Al avanzar `indice`, evita repetir la anterior.
  * Si se agotan los elementos, reinicia saltando la última.
+ *
+ * Si se pasa `ultimoId`, se garantiza que la frase devuelta NO es la misma
+ * que la inmediatamente anterior (mismo id interno).
  */
 export function elegirFrase(
   animo: EstadoAnimo,
@@ -346,10 +359,10 @@ export function elegirFrase(
   semilla: number | string,
   indice: number,
   ultimoId?: number, // id interno de la frase elegida la vez anterior (opcional)
-): string {
+): FraseElegida {
   const grupo = FRASES[animo]?.[especie]?.[tono];
   if (!grupo || grupo.length === 0) {
-    return "No tengo palabras, pero te quiero igual.";
+    return { frase: "No tengo palabras, pero te quiero igual.", id: -1 };
   }
 
   const seedNum =
@@ -370,26 +383,26 @@ export function elegirFrase(
   // Recorremos como máximo n saltos; si nos pasamos, "reiniciamos saltando la última".
   let i = inicio;
   let intentos = 0;
-  let lastChosenId: number | null = ultimoId ?? null;
+  const lastChosenId: number | null = ultimoId ?? null;
   while (intentos < n) {
     const candidatoId = i;
     if (candidatoId !== lastChosenId) {
-      return grupo[i];
+      return { frase: grupo[i], id: candidatoId };
     }
     i = (i + paso) % n;
     intentos++;
   }
 
   // Si todo el ciclo era el mismo id (grupo de tamaño 1), devolver el único.
-  if (n === 1) return grupo[0];
+  if (n === 1) return { frase: grupo[0], id: 0 };
 
   // Reinicio: empezar en `indice % n`, saltar el último id.
   const start = Math.abs(indice) % n;
   for (let k = 0; k < n; k++) {
     const j = (start + k) % n;
-    if (j !== lastChosenId) return grupo[j];
+    if (j !== lastChosenId) return { frase: grupo[j], id: j };
   }
-  return grupo[0];
+  return { frase: grupo[0], id: 0 };
 }
 
 /** Construye una semilla estable para identificar una (fuente+especie+tono). */
