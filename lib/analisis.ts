@@ -375,31 +375,43 @@ export function elegirFrase(
   rand();
 
   const n = grupo.length;
-  // inicio determinista (en [0, n))
-  const inicio = Math.floor(rand() * n);
-  const paso = (rand() * (n - 1) + 1) | 0; // paso coprimo-ish
-
-  // Construimos la secuencia cíclica sin repetir ultimoId (si lo conocemos).
-  // Recorremos como máximo n saltos; si nos pasamos, "reiniciamos saltando la última".
-  let i = inicio;
-  let intentos = 0;
-  const lastChosenId: number | null = ultimoId ?? null;
-  while (intentos < n) {
-    const candidatoId = i;
-    if (candidatoId !== lastChosenId) {
-      return { frase: grupo[i], id: candidatoId };
-    }
-    i = (i + paso) % n;
-    intentos++;
-  }
-
-  // Si todo el ciclo era el mismo id (grupo de tamaño 1), devolver el único.
+  // Grupo de tamaño 1: si la frase anterior era esa misma, no hay forma
+  // de evitar repetirla; devolvemos la única disponible.
   if (n === 1) return { frase: grupo[0], id: 0 };
 
-  // Reinicio: empezar en `indice % n`, saltar el último id.
-  const start = Math.abs(indice) % n;
+  // inicio determinista (en [0, n))
+  const inicio = Math.floor(rand() * n);
+  // paso entre 1 y n-1 (inclusive). Como n >= 2, cualquier paso es válido
+  // y el ciclo i, i+paso, i+2*paso, ... recorre n posiciones distintas.
+  const paso = ((Math.floor(rand() * (n - 1)) + 1) | 0) || 1;
+
+  const lastChosenId: number | null =
+    typeof ultimoId === "number" ? ultimoId : null;
+
+  // 1) Intentar desde `inicio` avanzando `paso`: como paso es coprimo con n
+  //    y n >= 2, el ciclo recorre todos los ids. Devolvemos el primero que
+  //    no sea lastChosenId.
+  for (let k = 0; k < n; k++) {
+    const i = (inicio + k * paso) % n;
+    if (i !== lastChosenId) {
+      return { frase: grupo[i], id: i };
+    }
+  }
+
+  // 2) Fallback (no debería activarse nunca con n >= 2 y paso coprimo,
+  //    pero garantiza correctitud incluso ante entradas degeneradas):
+  //    empezar en `indice % n` y devolver el primero distinto.
+  const start = ((Math.abs(Math.trunc(indice)) % n) + n) % n;
   for (let k = 0; k < n; k++) {
     const j = (start + k) % n;
+    if (j !== lastChosenId) {
+      return { frase: grupo[j], id: j };
+    }
+  }
+
+  // 3) Caso degenerado: todos los ids del grupo son lastChosenId (imposible
+  //    con n >= 2). Devolver el primero distinto a lastChosenId, si existe.
+  for (let j = 0; j < n; j++) {
     if (j !== lastChosenId) return { frase: grupo[j], id: j };
   }
   return { frase: grupo[0], id: 0 };

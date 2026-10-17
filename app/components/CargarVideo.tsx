@@ -427,36 +427,33 @@ export default function CargarVideo({
         >
           🎞️ Elegir un video
         </button>
-        {estadoWeb.tipo === "apagado" ? (
-          <>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => void iniciarGrabacion()}
-              disabled={!webcamSoportada}
-              aria-disabled={!webcamSoportada}
-              title={
-                webcamSoportada
-                  ? undefined
-                  : "Tu navegador no expone webcam; arrastra un video en su lugar."
-              }
-            >
-              🎥 Grabar con la webcam
-            </button>
-            {!webcamSoportada && (
-              <span className="text-sm muted" role="note">
-                Tu navegador no expone webcam. Arrastra un video en su lugar.
-              </span>
-            )}
-          </>
-        ) : estadoWeb.tipo === "pidiendo" ? (
+        {webcamSoportada && estadoWeb.tipo === "apagado" && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => void iniciarGrabacion()}
+          >
+            🎥 Grabar con la webcam
+          </button>
+        )}
+        {webcamSoportada && estadoWeb.tipo === "pidiendo" && (
           <button type="button" className="btn btn-ghost" disabled>
             Pidiendo permiso…
           </button>
-        ) : (
+        )}
+        {webcamSoportada && estadoWeb.tipo === "grabando" && (
           <button type="button" className="btn btn-danger" onClick={detenerGrabacion}>
             ⏹ Detener grabación
           </button>
+        )}
+        {!webcamSoportada && (
+          <span
+            className="text-sm muted"
+            role="note"
+            aria-label="Webcam no disponible"
+          >
+            Tu navegador no expone webcam. Arrastra un video en su lugar.
+          </span>
         )}
       </div>
 

@@ -61,8 +61,9 @@ export default function TarjetaHistorial({ registro, onAbrir, onBorrar }: Props)
               type="button"
               className="btn btn-ghost btn-sm"
               onClick={(e) => { e.stopPropagation(); onBorrar(); }}
-              aria-label={`Borrar esta traducción`}
-              title="Saca esta traducción de tu historial."
+              aria-label={`Borrar esta traducción (abre confirmación)`}
+              aria-haspopup="dialog"
+              title="Saca esta traducción de tu historial (pide confirmación)."
             >
               🗑 Borrar
             </button>

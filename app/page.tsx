@@ -10,10 +10,11 @@ import type { AnalisisCompleto, Especie, Tono } from "../lib/types";
 
 type Fase = "inicio" | "analizando" | "resultado";
 
-// Garantiza que la pantalla de análisis dure al menos 2.5s aunque el motor
-// termine antes (AC2.1: "etapas paralelas al análisis; si termina antes, se
-// muestran todas igual: total mín 2.5s, máx 4s").
+// Garantiza que la pantalla de análisis dure entre 2.5s y 4s aunque el
+// motor termine antes (AC2.1: "etapas paralelas al análisis; si termina
+// antes, se muestran todas igual: total mín 2.5s, máx 4s").
 const ANALISIS_MIN_MS = 2500;
+const ANALISIS_MAX_MS = 4000;
 
 export default function HomePage() {
   const [fase, setFase] = useState<Fase>("inicio");
@@ -36,10 +37,18 @@ export default function HomePage() {
     try {
       const señales = await analizarVideo({ src: video.url });
       const { animo, certeza } = clasificar(señales, especie);
-      const restante = ANALISIS_MIN_MS - (performance.now() - t0);
-      // Esperar lo que falte para llegar al mínimo de la pantalla de análisis.
-      // Si ya pasamos el mínimo, avanzamos igual (no extendemos más allá de
-      // lo estrictamente necesario para cumplir el mínimo).
+      // AC2.1: la pantalla de análisis debe durar entre 2.5s y 4s aunque
+      // el motor termine antes. Calculamos lo que falta para llegar al
+      // mínimo SIN superar el máximo (si ya pasó el máximo, avanzamos ya;
+      // si está entre min y max, esperamos hasta el max para no acortar).
+      const elapsed = performance.now() - t0;
+      let restante = 0;
+      if (elapsed < ANALISIS_MIN_MS) {
+        restante = ANALISIS_MIN_MS - elapsed;
+      } else if (elapsed < ANALISIS_MAX_MS) {
+        // ya estamos dentro del rango; completar hasta el máximo
+        restante = ANALISIS_MAX_MS - elapsed;
+      }
       if (restante > 0) {
         await new Promise((r) => setTimeout(r, restante));
       }

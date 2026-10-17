@@ -60,18 +60,19 @@ export default function Resultado({
     return Math.round(Math.max(CERTEZA_MIN, Math.min(CERTEZA_MAX, v)));
   })();
 
-  // Selección de frase: arranca con indice 0 y se va avanzando con R.
-  // Guardamos también el id interno de la última frase elegida para no
-  // repetir la inmediatamente anterior en la siguiente llamada (AC3.4).
+  // Selección de frase: AC3.4 — la primera frase y todas las siguientes
+  // (R) NUNCA repiten la inmediatamente anterior. Por eso elegimos la
+  // primera con `indice=0` pasando `ultimoId = -1` (id imposible, así no
+  // se autobloquea) y registramos su id real como estado inicial para
+  // que la siguiente llamada (R, o el useEffect de cambio de tono) ya
+  // tenga referencia y NO devuelva la misma frase.
+  const seleccionInicial = useMemo(
+    () => elegirFrase(animo, especie, tono, semilla, 0, -1),
+    [animo, especie, tono, semilla],
+  );
   const [indiceFrase, setIndiceFrase] = useState(0);
-  const [ultimoId, setUltimoId] = useState<number | null>(null);
-  const [frase, setFrase] = useState<string>(() => {
-    const r = elegirFrase(animo, especie, tono, semilla, 0);
-    // No bloqueamos en el primer arranque (no hay frase previa); el id queda
-    // registrado para la próxima vez.
-    queueMicrotask(() => setUltimoId(r.id));
-    return r.frase;
-  });
+  const [ultimoId, setUltimoId] = useState<number | null>(seleccionInicial.id);
+  const [frase, setFrase] = useState<string>(seleccionInicial.frase);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   // Cuando cambia el tono, recalcular la frase al instante SIN repetir la

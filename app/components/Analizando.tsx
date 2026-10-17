@@ -60,11 +60,17 @@ export default function Analizando({ videoUrl, onCancelar }: Props) {
     };
   }, [videoUrl]);
 
-  // Avance de etapas y duración mínima/máxima
+  // Avance de etapas y duración mínima/máxima (AC2.1: 2.5–4s con las 4
+  // etapas marcadas, aunque el motor termine antes — el padre ya bloquea
+  // la transición a resultado, aquí solo garantizamos el orden visual).
   useEffect(() => {
     canceladoRef.current = false;
     const t0 = performance.now();
-    const tiempoPorEtapa = 700; // ms visibles por etapa
+    // Distribuir las 4 etapas en toda la ventana [0, MAX_MS] para que
+    // se vean "una a una" como pide la spec (F2.1) y todas queden
+    // marcadas al llegar al mínimo de 2.5s.
+    const duracionVisible = MAX_MS;
+    const tiempoPorEtapa = Math.floor(duracionVisible / ETAPAS.length);
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     for (let i = 0; i < ETAPAS.length; i++) {
@@ -75,10 +81,12 @@ export default function Analizando({ videoUrl, onCancelar }: Props) {
       );
     }
 
+    // Watchdog: si por alguna razón no se dispararon los timers (p.ej.
+    // pestaña en background), marcar todas al pasar MIN_MS y cortar al
+    // pasar MAX_MS.
     const watchdog = setInterval(() => {
       const elapsed = performance.now() - t0;
       if (elapsed >= MIN_MS) {
-        // Mantener al menos 2.5s: si ya pasó, mantener todas las etapas marcadas
         setIndiceEtapa(ETAPAS.length);
       }
       if (elapsed >= MAX_MS) {
