@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "issues": [
+    {
+      "file": "app/page.tsx",
+      "severity": "low",
+      "detail": "Falta subtítulo de propósito bajo el <h1> 'Traduce lo que dice tu mascota' (sección 8 de UX_GUIDELINES). Sugerido: agregar un <p className='subtitle'> bajo el h1 con una línea tipo 'Sube o graba un video corto de tu perro o gato y descubre, con humor, qué dice. Todo se analiza en tu computador.' dentro del .card en la fase 'inicio'."
+    },
+    {
+      "file": "app/components/CargarVideo.tsx",
+      "severity": "low",
+      "detail": "El toggle 'Mostrar/Ocultar opciones de cámara' (líneas ~545-560) es engañoso: el aria-label y el texto prometen opciones de configuración, pero el contenido revelado es solo un párrafo informativo de privacidad. Sugerido: renombrar a 'Mostrar más información' / 'Ocultar más información' (o mover el texto a un .help-tip del título de la dropzone)."
+    },
+    {
+      "file": "app/components/CargarVideo.tsx",
+      "severity": "low",
+      "detail": "Duplicación del botón '🎞️ Elegir un video': la dropzone actúa como activador del fileInput y debajo hay otro botón '🎞️ Elegir un video' en el cluster (líneas ~365 y ~520). Cuando NO hay video se ven dos formas equivalentes de hacer lo mismo. Sugerido: cuando hay video cargado (estado video-cargado), no mostrar el cluster de botones inferior; o quitar la dropzone como botón y dejarla solo como zona visual de drop (manejando el click por teclado con Enter)."
+    },
+    {
+      "file": "app/components/CargarVideo.tsx",
+      "severity": "low",
+      "detail": "El selector de especie no tiene valor inicial por defecto si NO hay preferencia guardada: arranca en null y el botón 'Analizar' queda disabled hasta que el usuario elija. Sugerido: precargar 'perro' como default razonable (caso típico según público) para que el flujo típico requiera 0 clics extra después de cargar el video."
+    }
+  ],
+  "summary": "App simple de un solo usuario (sin back-office ni roles) que cumple los criterios: tuteo consistente, sin jerga técnica visible, un solo .btn-primary por pantalla, flujos accesibles, modales con foco atrapado y Escape, empty state que enseña el primer paso, validación reactiva de errores, y un botón 'Analizar' único. Las fallas detectadas son cosméticas menores (falta subtítulo de propósito en home, toggle engañoso de 'opciones de cámara', duplicación del botón 'Elegir un video' y falta de default en especie) — no rompen ningún flujo crítico ni bloquean la tarea principal."
+}
