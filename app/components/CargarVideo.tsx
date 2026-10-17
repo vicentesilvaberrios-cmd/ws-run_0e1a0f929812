@@ -328,15 +328,16 @@ export default function CargarVideo({
 
   return (
     <form className="stack fade-up" onSubmit={onSubmit}>
-      {/* Subtítulo de propósito */}
-      <p className="subtitle">
-        Arrastra un video de tu perro o gato (máximo 1 minuto) y te diremos qué
-        dice, su ánimo y por qué lo creemos.
-      </p>
-
       {/* Zona de carga o video ya listo */}
       {!video ? (
         <>
+          {/* Pasos cuando aún no hay video (antes de la dropzone) */}
+          <ol className="steps" aria-label="Pasos para traducir a tu mascota">
+            <li>Sube o graba un video.</li>
+            <li>Elige si es perro o gato.</li>
+            <li>Pulsa <kbd>Analizar</kbd>.</li>
+          </ol>
+
           <button
             ref={dropzoneRef}
             type="button"
@@ -356,13 +357,6 @@ export default function CargarVideo({
             <span className="drop-titulo">Arrastra aquí tu video</span>
             <span className="drop-sub">o usa los botones de abajo.</span>
           </button>
-
-          {/* Pasos cuando aún no hay video */}
-          <ol className="steps" aria-label="Pasos para traducir a tu mascota">
-            <li>Sube o graba un video de tu mascota.</li>
-            <li>Elige si es perro o gato y el tono que prefieras.</li>
-            <li>Pulsa <kbd>Analizar</kbd> (o la tecla <kbd>Enter</kbd>).</li>
-          </ol>
 
           {/* Webcam en vivo */}
           {(estadoWeb.tipo === "pidiendo" || estadoWeb.tipo === "grabando") && (

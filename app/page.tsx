@@ -105,6 +105,10 @@ export default function HomePage() {
       {fase === "inicio" && (
         <div className="card">
           <h1>Traduce lo que dice tu mascota</h1>
+          <p className="subtitle">
+            Arrastra un video de tu perro o gato (máximo 1 minuto) y te diremos
+            qué dice, su ánimo y por qué lo creemos.
+          </p>
           <CargarVideo
             video={video}
             onVideoChange={setVideo}
